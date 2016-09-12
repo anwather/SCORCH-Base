@@ -2,10 +2,249 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+        "scorchType": {
+            "type": "string",
+            "defaultValue": "Standard_LRS",
+            "allowedValues": [
+                "Standard_LRS",
+                "Standard_ZRS",
+                "Standard_GRS",
+                "Standard_RAGRS",
+                "Premium_LRS"
+            ]
+        },
+        "orch-dc01Name": {
+            "type": "string",
+            "minLength": 1
+        },
+        "orch-dc01AdminUserName": {
+            "type": "string",
+            "minLength": 1
+        },
+        "orch-dc01AdminPassword": {
+            "type": "securestring"
+        },
+        "orch-dc01WindowsOSVersion": {
+            "type": "string",
+            "defaultValue": "2012-R2-Datacenter",
+            "allowedValues": [
+                "2008-R2-SP1",
+                "2012-Datacenter",
+                "2012-R2-Datacenter",
+                "Windows-Server-Technical-Preview"
+            ]
+        },
+        "dc01pipDnsName": {
+            "type": "string",
+            "minLength": 1
+        },
+        "_artifactsLocation": {
+            "type": "string",
+            "metadata": {
+                "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
+            }
+        },
+        "_artifactsLocationSasToken": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Auto-generated token to access _artifactsLocation"
+            }
+        },
+        "dc01extUpdateTagVersion": {
+            "type": "string",
+            "defaultValue": "1.0",
+            "metadata": {
+                "description": "This value must be changed from a previous deployment to ensure the extension will run"
+            }
+        }
     },
     "variables": {
+        "scorchName": "[concat('scorch', uniqueString(resourceGroup().id))]",
+        "scorchvnetPrefix": "10.0.0.0/16",
+        "scorchvnetSubnetName": "Subnet-1",
+        "scorchvnetSubnetPrefix": "10.0.0.0/24",
+        "orch-dc01ImagePublisher": "MicrosoftWindowsServer",
+        "orch-dc01ImageOffer": "WindowsServer",
+        "orch-dc01OSDiskName": "orch-dc01OSDisk",
+        "orch-dc01VmSize": "Standard_D1_v2",
+        "orch-dc01VnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'scorchvnet')]",
+        "orch-dc01SubnetRef": "[concat(variables('orch-dc01VnetID'), '/subnets/', variables('scorchvnetSubnetName'))]",
+        "orch-dc01StorageAccountContainerName": "vhds",
+        "orch-dc01NicName": "[concat(parameters('orch-dc01Name'), 'NetworkInterface')]",
+        "dc01pipName": "dc01pip",
+        "dc01extArchiveFolder": "DSC",
+        "dc01extArchiveFileName": "dc01ext.zip"
     },
     "resources": [
+        {
+            "name": "[variables('scorchName')]",
+            "type": "Microsoft.Storage/storageAccounts",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-15",
+            "dependsOn": [ ],
+            "tags": {
+                "displayName": "scorch"
+            },
+            "properties": {
+                "accountType": "[parameters('scorchType')]"
+            }
+        },
+        {
+            "name": "scorchvnet",
+            "type": "Microsoft.Network/virtualNetworks",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-15",
+            "dependsOn": [ ],
+            "tags": {
+                "displayName": "scorchvnet"
+            },
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('scorchvnetPrefix')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('scorchvnetSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[variables('scorchvnetSubnetPrefix')]"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[variables('orch-dc01NicName')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-15",
+            "dependsOn": [
+                "[concat('Microsoft.Network/virtualNetworks/', 'scorchvnet')]",
+                "[concat('Microsoft.Network/publicIPAddresses/', variables('dc01pipName'))]"
+            ],
+            "tags": {
+                "displayName": "orch-dc01Nic"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[variables('orch-dc01SubnetRef')]"
+                            },
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('dc01pipName'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[parameters('orch-dc01Name')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-15",
+            "dependsOn": [
+                "[concat('Microsoft.Storage/storageAccounts/', variables('scorchName'))]",
+                "[concat('Microsoft.Network/networkInterfaces/', variables('orch-dc01NicName'))]"
+            ],
+            "tags": {
+                "displayName": "orch-dc01"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[variables('orch-dc01VmSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('orch-dc01Name')]",
+                    "adminUsername": "[parameters('orch-dc01AdminUsername')]",
+                    "adminPassword": "[parameters('orch-dc01AdminPassword')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "[variables('orch-dc01ImagePublisher')]",
+                        "offer": "[variables('orch-dc01ImageOffer')]",
+                        "sku": "[parameters('orch-dc01WindowsOSVersion')]",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "orch-dc01OSDisk",
+                        "vhd": {
+                            "uri": "[concat('https://', variables('scorchName'), '.blob.core.windows.net/', variables('orch-dc01StorageAccountContainerName'), '/', variables('orch-dc01OSDiskName'), '.vhd')]"
+                        },
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('orch-dc01NicName'))]"
+                        }
+                    ]
+                }
+            },
+            "resources": [
+                {
+                    "name": "Microsoft.Powershell.DSC",
+                    "type": "extensions",
+                    "location": "[resourceGroup().location]",
+                    "apiVersion": "2015-06-15",
+                    "dependsOn": [
+                        "[concat('Microsoft.Compute/virtualMachines/', parameters('orch-dc01Name'))]"
+                    ],
+                    "tags": {
+                        "displayName": "dc01ext"
+                    },
+                    "properties": {
+                        "publisher": "Microsoft.Powershell",
+                        "type": "DSC",
+                        "typeHandlerVersion": "2.9",
+                        "autoUpgradeMinorVersion": true,
+                        "forceUpdateTag": "[parameters('dc01extUpdateTagVersion')]",
+                        "settings": {
+                            "configuration": {
+                                "url": "[concat(parameters('_artifactsLocation'), '/', variables('dc01extArchiveFolder'), '/', variables('dc01extArchiveFileName'))]",
+                                "script": "dc01ext.ps1",
+                                "function": "Main"
+                            },
+                          "configurationArguments": {
+                            "nodeName": "[parameters('orch-dc01Name')]",
+                            "DomainAdminCredentials": {
+                              "UserName": "[parameters('orch-dc01AdminUserName')]",
+                              "Password": "PrivateSettingsRef:AdminPassword"
+                            },
+                            "DomainName": "SCORCH.LAB"
+                          }
+                        },
+                      "protectedSettings": {
+                        "configurationUrlSasToken": "[parameters('_artifactsLocationSasToken')]",
+                        "AdminPassword": "[parameters('orch-dc01AdminPassword')]"
+                      }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "[variables('dc01pipName')]",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-15",
+            "dependsOn": [ ],
+            "tags": {
+                "displayName": "dc01pip"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic",
+                "dnsSettings": {
+                    "domainNameLabel": "[parameters('dc01pipDnsName')]"
+                }
+            }
+        }
     ],
     "outputs": {
     }

@@ -2,5 +2,20 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+        "orch-dc01Name": {
+            "value": "ORCH-DC01"
+        },
+        "orch-dc01AdminUserName": {
+            "value": "s-admin"
+        },
+        "orch-dc01AdminPassword": {
+            "value": "Njc9addh1234"
+        },
+        "dc01pipDnsName": {
+            "value": "dc01pipdns"
+        },
+        "dc01extUpdateTagVersion": {
+            "value": "6.0"
+        }
     }
 }
