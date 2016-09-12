@@ -6,10 +6,9 @@ Param(
 $NodeName = 'localhost',
 
 [PSCredential]
-$DomainAdminCredentials,
+$DomainAdminCredentials
 
-[string]
-$DomainName
+
 )
 
 
@@ -81,9 +80,9 @@ Node $NodeName
 
       xADDomain CreateForest 
         { 
-            DomainName = $DomainName           
-            DomainAdministratorCredential = $DomainCreds
-            SafemodeAdministratorPassword = $DomainCreds
+            DomainName = $Node.DomainName        
+            DomainAdministratorCredential = $DomainAdminCredentials
+            SafemodeAdministratorPassword = $DomainAdminCredentials
             #DomainNetbiosName = $Node.DomainNetBiosName
             DependsOn = '[WindowsFeature]ADDS_Install', '[WindowsFeature]DNS'
         }  

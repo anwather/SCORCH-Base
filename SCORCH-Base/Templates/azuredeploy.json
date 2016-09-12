@@ -56,6 +56,27 @@
             "metadata": {
                 "description": "This value must be changed from a previous deployment to ensure the extension will run"
             }
+        },
+        "orch-ms01Name": {
+            "type": "string",
+            "minLength": 1
+        },
+        "orch-ms01AdminUserName": {
+            "type": "string",
+            "minLength": 1
+        },
+        "orch-ms01AdminPassword": {
+            "type": "securestring"
+        },
+        "orch-ms01WindowsOSVersion": {
+            "type": "string",
+            "defaultValue": "2012-R2-Datacenter",
+            "allowedValues": [
+                "2008-R2-SP1",
+                "2012-Datacenter",
+                "2012-R2-Datacenter",
+                "Windows-Server-Technical-Preview"
+            ]
         }
     },
     "variables": {
@@ -73,7 +94,15 @@
         "orch-dc01NicName": "[concat(parameters('orch-dc01Name'), 'NetworkInterface')]",
         "dc01pipName": "dc01pip",
         "dc01extArchiveFolder": "DSC",
-        "dc01extArchiveFileName": "dc01ext.zip"
+        "dc01extArchiveFileName": "dc01ext.zip",
+        "orch-ms01ImagePublisher": "MicrosoftWindowsServer",
+        "orch-ms01ImageOffer": "WindowsServer",
+        "orch-ms01OSDiskName": "orch-ms01OSDisk",
+        "orch-ms01VmSize": "Standard_D2_v2",
+        "orch-ms01VnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'scorchvnet')]",
+        "orch-ms01SubnetRef": "[concat(variables('orch-ms01VnetID'), '/subnets/', variables('scorchvnetSubnetName'))]",
+        "orch-ms01StorageAccountContainerName": "vhds",
+        "orch-ms01NicName": "[concat(parameters('orch-ms01Name'), 'NetworkInterface')]"
     },
     "resources": [
         {
@@ -217,8 +246,7 @@
                             "DomainAdminCredentials": {
                               "UserName": "[parameters('orch-dc01AdminUserName')]",
                               "Password": "PrivateSettingsRef:AdminPassword"
-                            },
-                            "DomainName": "SCORCH.LAB"
+                            }
                           }
                         },
                       "protectedSettings": {
@@ -242,6 +270,77 @@
                 "publicIPAllocationMethod": "Dynamic",
                 "dnsSettings": {
                     "domainNameLabel": "[parameters('dc01pipDnsName')]"
+                }
+            }
+        },
+        {
+            "name": "[variables('orch-ms01NicName')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-15",
+            "dependsOn": [
+                "[concat('Microsoft.Network/virtualNetworks/', 'scorchvnet')]"
+            ],
+            "tags": {
+                "displayName": "orch-ms01Nic"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[variables('orch-ms01SubnetRef')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[parameters('orch-ms01Name')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-15",
+            "dependsOn": [
+                "[concat('Microsoft.Storage/storageAccounts/', variables('scorchName'))]",
+                "[concat('Microsoft.Network/networkInterfaces/', variables('orch-ms01NicName'))]"
+            ],
+            "tags": {
+                "displayName": "orch-ms01"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[variables('orch-ms01VmSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('orch-ms01Name')]",
+                    "adminUsername": "[parameters('orch-ms01AdminUsername')]",
+                    "adminPassword": "[parameters('orch-ms01AdminPassword')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "[variables('orch-ms01ImagePublisher')]",
+                        "offer": "[variables('orch-ms01ImageOffer')]",
+                        "sku": "[parameters('orch-ms01WindowsOSVersion')]",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "orch-ms01OSDisk",
+                        "vhd": {
+                            "uri": "[concat('https://', variables('scorchName'), '.blob.core.windows.net/', variables('orch-ms01StorageAccountContainerName'), '/', variables('orch-ms01OSDiskName'), '.vhd')]"
+                        },
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('orch-ms01NicName'))]"
+                        }
+                    ]
                 }
             }
         }
