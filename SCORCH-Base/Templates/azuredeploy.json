@@ -1,109 +1,108 @@
 ﻿{
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
-    "parameters": {
-        "scorchType": {
-            "type": "string",
-            "defaultValue": "Standard_LRS",
-            "allowedValues": [
-                "Standard_LRS",
-                "Standard_ZRS",
-                "Standard_GRS",
-                "Standard_RAGRS",
-                "Premium_LRS"
-            ]
-        },
-        "orch-dc01Name": {
-            "type": "string",
-            "minLength": 1
-        },
-        "orch-dc01AdminUserName": {
-            "type": "string",
-            "minLength": 1
-        },
-        "orch-dc01AdminPassword": {
-            "type": "securestring"
-        },
-        "orch-dc01WindowsOSVersion": {
-            "type": "string",
-            "defaultValue": "2012-R2-Datacenter",
-            "allowedValues": [
-                "2008-R2-SP1",
-                "2012-Datacenter",
-                "2012-R2-Datacenter",
-                "Windows-Server-Technical-Preview"
-            ]
-        },
-        "dc01pipDnsName": {
-            "type": "string",
-            "minLength": 1
-        },
-        "_artifactsLocation": {
-            "type": "string",
-            "metadata": {
-                "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
-            }
-        },
-        "_artifactsLocationSasToken": {
-            "type": "securestring",
-            "metadata": {
-                "description": "Auto-generated token to access _artifactsLocation"
-            }
-        },
-        "dc01extUpdateTagVersion": {
-            "type": "string",
-            "defaultValue": "1.0",
-            "metadata": {
-                "description": "This value must be changed from a previous deployment to ensure the extension will run"
-            }
-        },
-        "orch-ms01Name": {
-            "type": "string",
-            "minLength": 1
-        },
-        "orch-ms01AdminUserName": {
-            "type": "string",
-            "minLength": 1
-        },
-        "orch-ms01AdminPassword": {
-            "type": "securestring"
-        },
-        "orch-ms01WindowsOSVersion": {
-            "type": "string",
-            "defaultValue": "2012-R2-Datacenter",
-            "allowedValues": [
-                "2008-R2-SP1",
-                "2012-Datacenter",
-                "2012-R2-Datacenter",
-                "Windows-Server-Technical-Preview"
-            ]
-        }
+  "parameters": {
+    "scorchType": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_ZRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Premium_LRS"
+      ]
     },
-    "variables": {
-        "scorchName": "[concat('scorch', uniqueString(resourceGroup().id))]",
-        "scorchvnetPrefix": "10.0.0.0/16",
-        "scorchvnetSubnetName": "Subnet-1",
-        "scorchvnetSubnetPrefix": "10.0.0.0/24",
-        "orch-dc01ImagePublisher": "MicrosoftWindowsServer",
-        "orch-dc01ImageOffer": "WindowsServer",
-        "orch-dc01OSDiskName": "orch-dc01OSDisk",
-        "orch-dc01VmSize": "Standard_D1_v2",
-        "orch-dc01VnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'scorchvnet')]",
-        "orch-dc01SubnetRef": "[concat(variables('orch-dc01VnetID'), '/subnets/', variables('scorchvnetSubnetName'))]",
-        "orch-dc01StorageAccountContainerName": "vhds",
-        "orch-dc01NicName": "[concat(parameters('orch-dc01Name'), 'NetworkInterface')]",
-        "dc01pipName": "dc01pip",
-        "dc01extArchiveFolder": "DSC",
-        "dc01extArchiveFileName": "dc01ext.zip",
-        "orch-ms01ImagePublisher": "MicrosoftWindowsServer",
-        "orch-ms01ImageOffer": "WindowsServer",
-        "orch-ms01OSDiskName": "orch-ms01OSDisk",
-        "orch-ms01VmSize": "Standard_D2_v2",
-        "orch-ms01VnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'scorchvnet')]",
-        "orch-ms01SubnetRef": "[concat(variables('orch-ms01VnetID'), '/subnets/', variables('scorchvnetSubnetName'))]",
-        "orch-ms01StorageAccountContainerName": "vhds",
-        "orch-ms01NicName": "[concat(parameters('orch-ms01Name'), 'NetworkInterface')]"
+    "orch-dc01Name": {
+      "type": "string",
+      "minLength": 1
     },
+    "AdminUserName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "AdminPassword": {
+      "type": "securestring"
+    },
+    "orch-dc01WindowsOSVersion": {
+      "type": "string",
+      "defaultValue": "2012-R2-Datacenter",
+      "allowedValues": [
+        "2008-R2-SP1",
+        "2012-Datacenter",
+        "2012-R2-Datacenter",
+        "Windows-Server-Technical-Preview"
+      ]
+    },
+    "DomainAdminUserName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "DomainAdminPassword": {
+      "type": "securestring"
+    },
+    "dc01pipDnsName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "_artifactsLocation": {
+      "type": "string",
+      "metadata": {
+        "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
+      }
+    },
+    "_artifactsLocationSasToken": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Auto-generated token to access _artifactsLocation"
+      }
+    },
+    "dc01extUpdateTagVersion": {
+      "type": "string",
+      "defaultValue": "1.0",
+      "metadata": {
+        "description": "This value must be changed from a previous deployment to ensure the extension will run"
+      }
+    },
+    "orch-ms01Name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "msextUpdateTagVersion": {
+      "type": "string",
+      "defaultValue": "1.0",
+      "metadata": {
+        "description": "This value must be changed from a previous deployment to ensure the extension will run"
+      }
+    }
+  },
+  "variables": {
+    "scorchName": "[concat('scorch', uniqueString(resourceGroup().id))]",
+    "scorchvnetPrefix": "10.0.0.0/16",
+    "scorchvnetSubnetName": "Subnet-1",
+    "scorchvnetSubnetPrefix": "10.0.0.0/24",
+    "orch-dc01ImagePublisher": "MicrosoftWindowsServer",
+    "orch-dc01ImageOffer": "WindowsServer",
+    "orch-dc01OSDiskName": "orch-dc01OSDisk",
+    "orch-dc01VmSize": "Standard_D1_v2",
+    "orch-dc01VnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'scorchvnet')]",
+    "orch-dc01SubnetRef": "[concat(variables('orch-dc01VnetID'), '/subnets/', variables('scorchvnetSubnetName'))]",
+    "orch-dc01StorageAccountContainerName": "vhds",
+    "orch-dc01NicName": "[concat(parameters('orch-dc01Name'), 'NetworkInterface')]",
+    "dc01pipName": "dc01pip",
+    "dc01extArchiveFolder": "DSC",
+    "dc01extArchiveFileName": "dc01ext.zip",
+    "orch-ms01ImagePublisher": "MicrosoftSQLServer",
+    "orch-ms01ImageOffer": "SQL2014-WS2012R2",
+    "orch-ms01OSDiskName": "orch-ms01OSDisk",
+    "orch-ms01VmSize": "Standard_D2_v2",
+    "orch-ms01VnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'scorchvnet')]",
+    "orch-ms01SubnetRef": "[concat(variables('orch-ms01VnetID'), '/subnets/', variables('scorchvnetSubnetName'))]",
+    "orch-ms01StorageAccountContainerName": "vhds",
+    "orch-ms01NicName": "[concat(parameters('orch-ms01Name'), 'NetworkInterface')]",
+      "msextArchiveFolder": "DSC",
+      "msextArchiveFileName": "msext.zip"
+  },
     "resources": [
         {
             "name": "[variables('scorchName')]",
@@ -190,8 +189,8 @@
                 },
                 "osProfile": {
                     "computerName": "[parameters('orch-dc01Name')]",
-                    "adminUsername": "[parameters('orch-dc01AdminUsername')]",
-                    "adminPassword": "[parameters('orch-dc01AdminPassword')]"
+                    "adminUsername": "[parameters('AdminUsername')]",
+                    "adminPassword": "[parameters('AdminPassword')]"
                 },
                 "storageProfile": {
                     "imageReference": {
@@ -244,14 +243,14 @@
                           "configurationArguments": {
                             "nodeName": "[parameters('orch-dc01Name')]",
                             "DomainAdminCredentials": {
-                              "UserName": "[parameters('orch-dc01AdminUserName')]",
+                              "UserName": "[parameters('AdminUserName')]",
                               "Password": "PrivateSettingsRef:AdminPassword"
                             }
                           }
                         },
                       "protectedSettings": {
                         "configurationUrlSasToken": "[parameters('_artifactsLocationSasToken')]",
-                        "AdminPassword": "[parameters('orch-dc01AdminPassword')]"
+                        "AdminPassword": "[parameters('AdminPassword')]"
                       }
                     }
                 }
@@ -316,14 +315,14 @@
                 },
                 "osProfile": {
                     "computerName": "[parameters('orch-ms01Name')]",
-                    "adminUsername": "[parameters('orch-ms01AdminUsername')]",
-                    "adminPassword": "[parameters('orch-ms01AdminPassword')]"
+                    "adminUsername": "[parameters('AdminUsername')]",
+                    "adminPassword": "[parameters('AdminPassword')]"
                 },
                 "storageProfile": {
                     "imageReference": {
                         "publisher": "[variables('orch-ms01ImagePublisher')]",
                         "offer": "[variables('orch-ms01ImageOffer')]",
-                        "sku": "[parameters('orch-ms01WindowsOSVersion')]",
+                        "sku": "Enterprise",
                         "version": "latest"
                     },
                     "osDisk": {
@@ -342,7 +341,41 @@
                         }
                     ]
                 }
-            }
+            },
+            "resources": [
+                {
+                    "name": "Microsoft.Powershell.DSC",
+                    "type": "extensions",
+                    "location": "[resourceGroup().location]",
+                    "apiVersion": "2015-06-15",
+                    "dependsOn": [
+                        "[concat('Microsoft.Compute/virtualMachines/', parameters('orch-ms01Name'))]"
+                    ],
+                    "tags": {
+                        "displayName": "msext"
+                    },
+                    "properties": {
+                        "publisher": "Microsoft.Powershell",
+                        "type": "DSC",
+                        "typeHandlerVersion": "2.9",
+                        "autoUpgradeMinorVersion": true,
+                        "forceUpdateTag": "[parameters('msextUpdateTagVersion')]",
+                        "settings": {
+                            "configuration": {
+                                "url": "[concat(parameters('_artifactsLocation'), '/', variables('msextArchiveFolder'), '/', variables('msextArchiveFileName'))]",
+                                "script": "msext.ps1",
+                                "function": "Main"
+                            },
+                            "configurationArguments": {
+                                "nodeName": "[parameters('orch-ms01Name')]"
+                            }
+                        },
+                        "protectedSettings": {
+                            "configurationUrlSasToken": "[parameters('_artifactsLocationSasToken')]"
+                        }
+                    }
+                }
+            ]
         }
     ],
     "outputs": {
